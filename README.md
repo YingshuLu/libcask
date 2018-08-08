@@ -32,7 +32,7 @@ then libcask.so would be present in libcask/output
 
 Build tests:  
 $ cd libcask/test    
-$ bash build_test.sh server
+$ bash build_test.sh server [debug]
 
 ### Appendix
-Libco & Libgo & Libtask inspired this C style coroutine library.
+[libco](https://github.com/Tencent/libco) & [libgo](https://github.com/yyzybb537/libgo) & [libtask](https://swtch.com/libtask/) inspired this C style coroutine library.
