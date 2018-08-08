@@ -60,6 +60,6 @@ void* deque_pop_back(deque_t *d) {
 
 void deque_clear(deque_t *d) {
     while(!deque_empty(d)) {
-      deque_pop_front(q);
+      deque_pop_front(d);
     }
 }
