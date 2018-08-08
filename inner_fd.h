@@ -29,6 +29,7 @@ typedef struct _inner_fd_st inner_fd;
 int is_fd_valid(int fd);
 inner_fd* new_inner_fd(int fd);
 inner_fd* get_inner_fd(int fd);
+void set_inner_fd_timeout(int fd, int secs);
 void delete_inner_fd(int fd);
 void close_all_inner_fd();
 

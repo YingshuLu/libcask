@@ -21,7 +21,7 @@ typedef struct _spin_lock_st spin_lock_t;
     atomic_compare_and_swap(&((sl)->lock), SPIN_ACQUIRED, SPIN_RELESAED);\
 } while(0)
 #define spin_locked(sl)     (atomic_get(&((sl)->lock)) == SPIN_ACQUIRED)
-#define spin_trylock(sl)    ((spin_locked(ls)) || atomic_compare_and_swap(&((sl)->lock), SPIN_RELESAED, SPIN_ACQUIRED))
+#define spin_trylock(sl)    ((spin_locked(sl)) || atomic_compare_and_swap(&((sl)->lock), SPIN_RELESAED, SPIN_ACQUIRED))
 
 #else
 //ticket spin lock
@@ -51,5 +51,5 @@ typedef struct _co_spinlock_st spin_lock_t;
 #define spin_locked(sl) co_spinlock_locked(sl)
 
 #endif //CO_TICKET_LOCK
-    
+
 #endif

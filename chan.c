@@ -52,7 +52,7 @@ int chan_nobuffer_send(chan_t *chan, void *msg) {
             co_cond_wait(&chan->not_full, &chan->mutex);
             if(sent) break;
         }
-    } while(!sent);    
+    } while(!sent);
     co_mutex_unlock(&chan->mutex);
     return 0;
 }
@@ -104,7 +104,10 @@ int chan_recv(chan_t *chan, void **msg) {
     return chan_buffered(chan)? chan_buffer_recv(chan, msg) : chan_nobuffer_recv(chan, msg);
 }
 
-void chan_close(chan_t *chan) {
-    
+int chan_size(chan_t *chan) {
+    return queue_size(&chan->msgs);
 }
 
+void chan_close(chan_t *chan) {
+    queue_clear(&chan->msgs);
+}

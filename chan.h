@@ -19,6 +19,7 @@ typedef struct _chan_st chan_t;
 void chan_open(chan_t *chan, size_t nelems, size_t elem_size);
 int chan_send(chan_t *chan, void *msg);
 int chan_recv(chan_t *chan, void **msg);
+int chan_size(chan_t *chan);
 void chan_close(chan_t *chan);
 int chan_buffered();
 

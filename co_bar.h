@@ -17,6 +17,7 @@ void co_bar_init(co_bar_t *bar, unsigned int cnt) {
 }
 
 void co_bar_wait(co_bar_t *bar) {
+    if(0 == atomic_get(&bar->count)) return;
     co_mutex_lock(&bar->mutex);
     if(0 == atomic_get(&bar->count)) {
         goto bar_end;

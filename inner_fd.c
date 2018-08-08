@@ -27,7 +27,7 @@ inner_fd* new_inner_fd(int fd) {
     ifd->error = IENONE;
     list_init(&(ifd->link));
     g_inner_fd_list[fd] = ifd;
-    return ifd; 
+    return ifd;
 }
 
 void delete_inner_fd(int fd) {
@@ -47,6 +47,13 @@ inner_fd* get_inner_fd(int fd) {
     }
     inner_fd* ifd = g_inner_fd_list[fd];
     return ifd;
+}
+
+void set_inner_fd_timeout(int fd, int secs) {
+      if(is_fd_valid(fd)) {
+        inner_fd *ifd = get_inner_fd(fd);
+        if(!ifd) ifd->timeout = secs;
+      }
 }
 
 void close_all_inner_fd() {

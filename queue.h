@@ -11,5 +11,6 @@ typedef deque_t queue_t;
 #define queue_size(q)    deque_size((q))
 #define queue_push(q, e) deque_push_back((q), e)
 #define queue_pop(q)     deque_pop_front((q))
+#define queue_clear(q)   deque_clear((q))
 
 #endif
