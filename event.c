@@ -58,9 +58,9 @@ epoll_t* new_epoll(size_t maxevents, int timeout) {
     return ep;
 }
 
-void init_epoll_timer(epoll_t *ep, size_t sec_size, size_t interval) {
+void init_epoll_timer(epoll_t *ep, size_t msec_size, time_t interval) {
     assert(ep && ep->fd >= 0);
-    time_wheel_t *tw = new_time_wheel(sec_size, interval);
+    time_wheel_t *tw = new_time_wheel(msec_size, interval);
     ep->timer = tw;
 
     inner_fd *ifd = new_inner_fd(tw->fd);

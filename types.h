@@ -18,11 +18,11 @@
 #ifndef CO_DEBUG
 #define DBG_LOG //
 #else
-#define DBG_LOG(fmt, ...) LOG_OUTPUT(FD_STDOUT, LOG_DEBUG, fmt, ##__VA_ARGS__)
+#define DBG_LOG(fmt, ...) LOG_OUTPUT(LOG_FD_STDOUT, LOG_DEBUG, fmt, ##__VA_ARGS__)
 #endif
 
-#define INF_LOG(fmt, ...) LOG_OUTPUT(FD_STDOUT, LOG_INFO, fmt, ##__VA_ARGS__)
-#define ERR_LOG(fmt, ...) LOG_OUTPUT(FD_STDERR, LOG_ERROR, fmt, ##__VA_ARGS__)
+#define INF_LOG(fmt, ...) LOG_OUTPUT(LOG_FD_STDOUT, LOG_INFO, fmt, ##__VA_ARGS__)
+#define ERR_LOG(fmt, ...) LOG_OUTPUT(LOG_FD_STDERR, LOG_ERROR, fmt, ##__VA_ARGS__)
 
 #define dperror(ret) do {\
     char _error_buffer[512] = {0};\

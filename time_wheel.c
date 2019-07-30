@@ -5,10 +5,10 @@
 #include "list.h"
 #include "time_wheel.h"
 
-#define MIN_TIME_WHEEL_SIZE 60
-#define MIN_TIME_WHEEL_INTERVAL 1 
+#define MIN_TIME_WHEEL_SIZE 6000
+#define MIN_TIME_WHEEL_INTERVAL 1
 
-time_wheel_t* new_time_wheel(size_t size, size_t interval) {
+time_wheel_t* new_time_wheel(size_t size, time_t interval) {
     time_wheel_t *tw = (time_wheel_t *) malloc(sizeof(time_wheel_t));
     tw->interval = interval < MIN_TIME_WHEEL_INTERVAL? MIN_TIME_WHEEL_INTERVAL : interval; 
 

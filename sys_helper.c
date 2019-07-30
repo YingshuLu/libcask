@@ -26,15 +26,15 @@ int get_connect_error(int fd) {
     return error;
 }
 
-unsigned int co_sleep(unsigned int seconds) {
-    if(!seconds) return 0;
-    seconds--;
+int co_sleep(unsigned long mseconds) {
+    if(!mseconds) return 0;
+    mseconds--;
     time_wheel_t* tw = current_sched()->epoll->timer;
     if(!tw) { PANIC("timer is NULL"); }
 
     inner_fd *ifd = new_inner_fd(-1);
     ifd->task = co_self();
-    ifd->timeout = seconds;
+    ifd->timeout = mseconds;
  
     wheel_update_element(tw, &ifd->link, ifd->timeout);
     co_sys_yield();
@@ -127,6 +127,8 @@ int events_poll_to_epoll(int events) {
     if(events | EPOLLERR) {
         epev |= EPOLLERR;
     }
+
+	if (epev != 0) epev = EPOLLET;
     return epev;
 
 }
@@ -135,53 +137,57 @@ extern int add_events(epoll_t *ep, int fd, int events);
 extern int delete_events(epoll_t *ep, int fd, int events);
 
 int co_poll(struct pollfd *fds, unsigned long int nfds, int timeout) {
-    if(!nfds) return 0;
-
     inner_fd *ifd = NULL;
     int epevs = 0;
     epoll_t *ep = current_sched()->epoll;
+
     for(int i = 0; i < nfds; i++){
         ifd = get_inner_fd(fds[i].fd);
-        if(ifd) {
-            ifd->task = co_self();
-            epevs = events_poll_to_epoll(fds[i].events);
-            //sucess
-            if(!add_events(ep, ifd->fd, epevs)) {
-               break; 
-            }
-        }
+        ifd->task = co_self();
+		ifd->error = IENONE;
+		//add interested list
+        add_events(ep, ifd->fd, fds[i].events | EPOLLET);
+		DBG_LOG("co_poll poll socket: %d, %s event", fds[i].fd, (fds[i].events & EPOLLIN)? "READ" : "WRITE");
+    	wheel_update_element(ep->timer, &ifd->link, ifd->timeout);
     }
 
-    wheel_update_element(ep->timer, &ifd->link, ifd->timeout);
     co_io_yield();
-    wheel_delete_element(&ifd->link);
 
-    delete_events(ep, ifd->fd, 0);
+	int events = 0;
+	int j = 0;
+	for (int i = 0; i < nfds; i++) {
+		events = 0;
+		ifd = get_inner_fd(fds[i].fd);
+		//remove interested list, any task's sockets wake up
+    	wheel_delete_element(&ifd->link);
+    	delete_events(ep, ifd->fd, 0);
+		if (IENONE == ifd->error) {	continue; }
 
-    fds[0].fd = ifd->fd;
-    int events = 0;
+	    if(ifd->error & IEREAD) {
+    	    events |= POLLIN;
+    	}
 
-    if(ifd->error & IEREAD) {
-        events |= POLLIN;
-    }
+    	if(ifd->error & IEWRITE) {
+        	events |= POLLOUT;
+    	}
 
-    if(ifd->error & IEWRITE) {
-        events |= POLLOUT;
-    }
+    	if(ifd->error & IEERR) {
+        	events |= POLLERR;
+    	}
 
-    if(ifd->error & IEERR) {
-        events |= POLLERR;
-    }
+    	if(ifd->error & IERDHUP) {
+        	events |= POLLRDHUP;
+    	}
 
-    if(ifd->error & IERDHUP) {
-        events |= POLLRDHUP;
-    }
+    	if(ifd->error & IEHUP) {
+        	events |= POLLHUP;
+    	}
 
-    if(ifd->error & IEHUP) {
-        events |= POLLHUP;
-    }
-    fds[0].revents = events;
+   		fds[i].revents = events;
+		DBG_LOG("co_poll return socket: %d, %s event", fds[i].fd, (fds[i].revents & EPOLLIN)? "READ" : "WRITE");
+		fds[j++] = fds[i];
+	}
 
-    return 1;
+    return j;
 }
 

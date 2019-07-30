@@ -104,6 +104,14 @@ int fcntl(int fd, int cmd, ...) {
                 ifd = new_inner_fd(fd);
             }
 
+			//ignore unset O_NONBLOCK
+			if (!(flags & O_NONBLOCK)) {
+				ifd->user_flags = flags;
+				flags |= O_NONBLOCK;
+				ret = hook_fcntl_pfn(fd, cmd, flags);
+				break;
+			}
+
             if(ifd && ifd->user_flags == flags) {
                 ret = 0;
                 break;
@@ -153,7 +161,6 @@ static int in_set_nonblock(int sockfd) {
     int user_flags = fcntl(sockfd, F_GETFL);
     co_enable_hook();
 
-    if (user_flags < 0) return user_flags;
     if(fcntl(sockfd, F_SETFL, user_flags | O_NONBLOCK) < 0) return -1;
     inner_fd *ifd = get_inner_fd(sockfd);
     ifd->user_flags = user_flags;
@@ -240,9 +247,9 @@ int accept(int sockfd, struct sockaddr *address, socklen_t *address_len) {
 int close(int fd) {
     HOOK_SYS_CALL(close);
     if(!co_hooked()) return hook_close_pfn(fd);
-    DBG_LOG("close hooked");
     inner_fd *ifd = get_inner_fd(fd);
     if(ifd) delete_inner_fd(fd);
+    DBG_LOG("close hooked [%d]", fd);
     return hook_close_pfn(fd);
 }
 
@@ -251,18 +258,7 @@ int read(int fd, void *buffer, size_t n) {
     if(!co_hooked()) return hook_read_pfn(fd, buffer, n);
     inner_fd *ifd = get_inner_fd(fd);
     if(!ifd || !(O_NONBLOCK & ifd->flags)) return hook_read_pfn(fd, buffer, n);
-
     DBG_LOG("read hooked");
-    /*
-    int events = EPOLLIN | EPOLLRDHUP | EPOLLERR;
-    int ret = event_poll(current_thread_epoll(), fd, events);
-    if (ret != 0) return -1;
-    ret = hook_read_pfn(fd, buffer, n);
-    //peer closed
-    if(ret == 0 && (ifd->error & IERDHUP)) return -1;
-    return ret;
-    */
-    
     int ret = hook_read_pfn(fd, buffer, n);
     if(ret == -1 && (errno == EAGAIN || errno == EWOULDBLOCK)) {
         int events = EPOLLIN | EPOLLRDHUP | EPOLLERR;
@@ -272,24 +268,6 @@ int read(int fd, void *buffer, size_t n) {
         if(ret == 0 && (ifd->error & IERDHUP)) return -1;
     }
     return ret;
-    
-
-    /*
-    int events = EPOLLIN | EPOLLRDHUP | EPOLLERR | EPOLLET;
-    int len = 0;
-    int ret = event_poll(current_thread_epoll(), fd, events);
-    if(ret != 0) return -1;
-    while(len < n) {
-        ret = hook_read_pfn(fd, buffer+len, n - len);
-        if(ret < 0) {
-            if(errno == EAGAIN || errno == EWOULDBLOCK) break;
-            //error
-            return ret;
-        }
-        len += ret;
-    }
-    return len;
-    */
 }
 
 ssize_t recv(int sockfd, void *buf, size_t len, int flags) {
@@ -297,38 +275,51 @@ ssize_t recv(int sockfd, void *buf, size_t len, int flags) {
     if(!co_hooked()) return hook_recv_pfn(sockfd, buf, len, flags);
     inner_fd *ifd = get_inner_fd(sockfd);
     if(!ifd || !(O_NONBLOCK & ifd->flags)) return hook_recv_pfn(sockfd, buf, len, flags);
-    int events = EPOLLIN | EPOLLRDHUP | EPOLLERR;
-    int ret = event_poll(current_thread_epoll(), sockfd, events);
-    if (ret != 0) return -1;
-    ret = hook_recv_pfn(sockfd, buf, len, flags);
-    if(ret == 0 && (ifd->error & IERDHUP)) return -1;
+    DBG_LOG("recv hooked");
+
+	int ret = hook_recv_pfn(sockfd, buf, len, flags);
+    if(ret == -1 && (errno == EAGAIN || errno == EWOULDBLOCK)) {
+    	int events = EPOLLIN | EPOLLRDHUP | EPOLLERR;
+    	ret = event_poll(current_thread_epoll(), sockfd, events);
+    	if (ret != 0) return -1;
+    	ret = hook_recv_pfn(sockfd, buf, len, flags);
+    	if(ret == 0 && (ifd->error & IERDHUP)) return -1;
+	}
     return ret;
 }
 
 ssize_t recvfrom(int sockfd, void *buf, size_t len, int flags, struct sockaddr *src_addr, socklen_t *addrlen) {
     HOOK_SYS_CALL(recvfrom);
     if(!co_hooked()) return hook_recvfrom_pfn(sockfd, buf, len, flags, src_addr, addrlen);
+    DBG_LOG("recvfrom hooked");
     inner_fd *ifd = get_inner_fd(sockfd);
     if(!ifd || !(O_NONBLOCK & ifd->flags)) return hook_recvfrom_pfn(sockfd, buf, len, flags, src_addr, addrlen);
-    int events = EPOLLIN | EPOLLRDHUP | EPOLLERR;
-    int ret = event_poll(current_thread_epoll(), sockfd, events);
-    if (ret != 0) return -1;
-    ret =  hook_recvfrom_pfn(sockfd, buf, len, flags, src_addr, addrlen);
-    if(ret == 0 && (ifd->error & IERDHUP)) return -1;
+	
+	int ret = hook_recvfrom_pfn(sockfd, buf, len, flags, src_addr, addrlen);
+    if(ret == -1 && (errno == EAGAIN || errno == EWOULDBLOCK)) {
+    	int events = EPOLLIN | EPOLLRDHUP | EPOLLERR;
+    	ret = event_poll(current_thread_epoll(), sockfd, events);
+    	if (ret != 0) return -1;
+    	ret = hook_recvfrom_pfn(sockfd, buf, len, flags, src_addr, addrlen);
+    	if(ret == 0 && (ifd->error & IERDHUP)) return -1;
+	}
     return ret;
 }
 
 ssize_t recvmsg(int sockfd, struct msghdr *msg, int flags) {
     HOOK_SYS_CALL(recvmsg);
     if(!co_hooked()) return hook_recvmsg_pfn(sockfd, msg, flags);
-    DBG_LOG("hook recvmsg");
     inner_fd *ifd = get_inner_fd(sockfd);
     if(!ifd || !(O_NONBLOCK & ifd->flags)) return hook_recvmsg_pfn(sockfd, msg, flags);
-    int events = EPOLLIN | EPOLLRDHUP | EPOLLERR;
-    int ret = event_poll(current_thread_epoll(), sockfd, events);
-    if (ret != 0) return -1;
-    ret = hook_recvmsg_pfn(sockfd, msg, flags);
-    if(ret == 0 && (ifd->error & IERDHUP)) return -1;
+	DBG_LOG("hook recvmsg");
+	int ret = hook_recvmsg_pfn(sockfd, msg, flags);
+    if(ret == -1 && (errno == EAGAIN || errno == EWOULDBLOCK)) {
+    	int events = EPOLLIN | EPOLLRDHUP | EPOLLERR;
+    	ret = event_poll(current_thread_epoll(), sockfd, events);
+    	if (ret != 0) return -1;
+    	ret = hook_recvmsg_pfn(sockfd, msg, flags);
+    	if(ret == 0 && (ifd->error & IERDHUP)) return -1;
+	}
     return ret;
 }
 
@@ -366,6 +357,7 @@ ssize_t send(int sockfd, const void *buf, size_t n, int flags) {
     inner_fd *ifd = get_inner_fd(sockfd);
     if(!ifd || !(O_NONBLOCK & ifd->flags)) return hook_send_pfn(sockfd, buf, n, flags);
 
+    DBG_LOG("send hooked");
     int len, ret;
     int events = EPOLLOUT | EPOLLRDHUP | EPOLLERR | EPOLLET;
     len = 0;
@@ -393,6 +385,7 @@ ssize_t sendto(int sockfd, const void *buf, size_t n, int flags, const struct so
     inner_fd *ifd = get_inner_fd(sockfd);
     if(!ifd || !(O_NONBLOCK & ifd->flags)) return hook_sendto_pfn(sockfd, buf, n, flags, dest_addr, addrlen);
 
+    DBG_LOG("sendto hooked");
     int len, ret;
     int events = EPOLLOUT | EPOLLRDHUP | EPOLLERR | EPOLLET;
     len = 0;
@@ -473,7 +466,7 @@ int gethostbyname_r(const char *name, struct hostent *host, char *buf, size_t bu
 
 int __poll(struct pollfd *fds, unsigned long int nfds, int timeout) {
     HOOK_SYS_CALL(__poll);
-    if(!co_hooked() || !timeout) return hook___poll_pfn(fds, nfds, timeout);
+    if(!co_hooked()) return hook___poll_pfn(fds, nfds, timeout);
     DBG_LOG("hook __poll");
     return co_poll(fds, nfds, timeout);
 }

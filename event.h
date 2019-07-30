@@ -16,7 +16,7 @@ struct _epoll_st {
 };
 
 epoll_t* new_epoll(size_t maxevents, int timeout);
-void init_epoll_timer(epoll_t *ep, size_t sec_size, size_t interval);
+void init_epoll_timer(epoll_t *ep, size_t sec_size, time_t interval);
 void delete_epoll(epoll_t *ep);
 
 int add_events(epoll_t *ep, int fd, int events);

@@ -47,7 +47,7 @@ sched_t *current_sched();
 sched_t *sched_create(); 
 void sched_destory(sched_t* s); 
 void schedule();
-int sched_active_event();
+int sched_active_event(sched_t* s);
 
 void __attribute__((__no_instrument_function__))
 __cyg_profile_func_enter(void *func, void *caller); 

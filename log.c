@@ -12,7 +12,7 @@
 #include "co_inner_define.h"
 
 #define LOG_BUFFER_SIZE (1024 * 4)
-const char *_log_levels[] = {"DBG", "INF", "ERR"};
+const char *_log_levels[] = {"D", "I", "E"};
 const char *_log_fmt = "[%s]>%s<[%d-%d-%lu] %s";
 #define _log_fmt_tail " <%s>@<%s:%d>\n", ##__VA_ARGS__, __func__, basename(__FILE__), __LINE__
 
@@ -22,12 +22,6 @@ __thread time_t _old_time = 0;
 __thread char _log_buf[LOG_BUFFER_SIZE] = {0};
 
 const char *get_time_str() {
-    /*
-    if(!_time_strf) {
-        _time_strf = (char *)calloc(20, 1);
-    }
-    */
-
     struct timeval tv;
     gettimeofday(&tv, NULL);
     if(_old_time != tv.tv_sec) {
@@ -38,7 +32,7 @@ const char *get_time_str() {
     return _time_strf;
 }
 
-void log_printf(int fd, int level, const char *fmt, ...) {
+int log_printf(int fd, int level, const char *fmt, ...) {
     char *buf = NULL;
     if (co_self()) {
         #define CO_LOG_KEY "co_log_key"
@@ -52,19 +46,24 @@ void log_printf(int fd, int level, const char *fmt, ...) {
         buf = _log_buf;
     }
 
-    int len = snprintf(buf, LOG_BUFFER_SIZE, _log_fmt, _log_levels[level], get_time_str(), getpid(), tid(), getcid(), fmt);
+	char new_fmt[1024] = {0};
+    int len = snprintf(new_fmt, 1024, _log_fmt, _log_levels[level], get_time_str(), getpid(), tid(), getcid(), fmt);
 
     if(len < 0) {
-        dprintf(3, "[log_porintf] error: snprintf return %d\n", len);
+        dprintf(LOG_FD_STDERR, "[log_porintf] error: snprintf return %d\n", len);
         abort();
     }
-    buf[len] = '\0';
+    new_fmt[len] = '\0';
 
     va_list args;
     va_start(args, fmt);
-    vdprintf(fd, buf, args);
+    len = vsnprintf(buf, LOG_BUFFER_SIZE, new_fmt, args);
     va_end(args);
 
-    //fflush(fdopen(fd, "w"));
-    //free(_log_buf);
+	int n = write(fd, buf, len);
+	if (n <= 0) {
+		dprintf(LOG_FD_STDERR, "[log_printf] error: write fd[%d] return: %d, cause: %s\n", fd, n, strerror(errno));
+		return -1;
+	}
+	return 0;
 }

@@ -19,7 +19,7 @@ struct _inner_fd_st {
     int user_flags;
     task_t* task; //only set it when read / write fd
     list_t link; //time wheel
-    int timeout;
+    time_t timeout;
     int error;
 };
 
@@ -29,7 +29,7 @@ typedef struct _inner_fd_st inner_fd;
 int is_fd_valid(int fd);
 inner_fd* new_inner_fd(int fd);
 inner_fd* get_inner_fd(int fd);
-void set_inner_fd_timeout(int fd, int secs);
+void set_inner_fd_timeout(int fd, time_t msecs);
 void delete_inner_fd(int fd);
 void close_all_inner_fd();
 

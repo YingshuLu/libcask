@@ -54,7 +54,7 @@ hash_key_t string_hash(const char* keyname) {
     hash_key_t key = 0;
     int len = strlen(keyname);
     int i;
-    for(i = 0; i <= len; i++)
+    for(i = 0; i < len; i++)
         key = key * 31 + keyname[i];
     return key;
 }

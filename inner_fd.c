@@ -8,7 +8,8 @@
 #define INVALID_FD -1
 #define MAX_FD_NUM 102400
 
-#define FD_TIMEOUT 10
+//5 seconds
+#define FD_TIMEOUT 3
 
 static inner_fd* g_inner_fd_list[MAX_FD_NUM] = {0};
 
@@ -49,10 +50,10 @@ inner_fd* get_inner_fd(int fd) {
     return ifd;
 }
 
-void set_inner_fd_timeout(int fd, int secs) {
+void set_inner_fd_timeout(int fd, time_t msecs) {
       if(is_fd_valid(fd)) {
         inner_fd *ifd = get_inner_fd(fd);
-        if(!ifd) ifd->timeout = secs;
+        if(!ifd) ifd->timeout = msecs;
       }
 }
 
