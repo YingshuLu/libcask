@@ -1,3 +1,3 @@
 #!/bin/sh
-gcc -fPIC -D CO_DEBUG -D CO_SCHED_STOP -shared -o output/libcask.so *.c -I./ -ldl
+gcc -D CO_DEBUG  -fPIC -std=gnu11 -shared -o output/libcask.so *.c -I./ -ldl
 

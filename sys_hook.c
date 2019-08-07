@@ -104,13 +104,13 @@ int fcntl(int fd, int cmd, ...) {
                 ifd = new_inner_fd(fd);
             }
 
-			//ignore unset O_NONBLOCK
-			if (!(flags & O_NONBLOCK)) {
-				ifd->user_flags = flags;
-				flags |= O_NONBLOCK;
-				ret = hook_fcntl_pfn(fd, cmd, flags);
-				break;
-			}
+            //ignore unset O_NONBLOCK
+            if (!(flags & O_NONBLOCK)) {
+                ifd->user_flags = flags;
+                flags |= O_NONBLOCK;
+                ret = hook_fcntl_pfn(fd, cmd, flags);
+                break;
+            }
 
             if(ifd && ifd->user_flags == flags) {
                 ret = 0;
@@ -248,8 +248,10 @@ int close(int fd) {
     HOOK_SYS_CALL(close);
     if(!co_hooked()) return hook_close_pfn(fd);
     inner_fd *ifd = get_inner_fd(fd);
-    if(ifd) delete_inner_fd(fd);
-    DBG_LOG("close hooked [%d]", fd);
+    if(ifd) {
+        delete_inner_fd(fd);
+        DBG_LOG("close hooked [%d]", fd);
+    }
     return hook_close_pfn(fd);
 }
 
@@ -277,14 +279,14 @@ ssize_t recv(int sockfd, void *buf, size_t len, int flags) {
     if(!ifd || !(O_NONBLOCK & ifd->flags)) return hook_recv_pfn(sockfd, buf, len, flags);
     DBG_LOG("recv hooked");
 
-	int ret = hook_recv_pfn(sockfd, buf, len, flags);
+    int ret = hook_recv_pfn(sockfd, buf, len, flags);
     if(ret == -1 && (errno == EAGAIN || errno == EWOULDBLOCK)) {
-    	int events = EPOLLIN | EPOLLRDHUP | EPOLLERR;
-    	ret = event_poll(current_thread_epoll(), sockfd, events);
-    	if (ret != 0) return -1;
-    	ret = hook_recv_pfn(sockfd, buf, len, flags);
-    	if(ret == 0 && (ifd->error & IERDHUP)) return -1;
-	}
+        int events = EPOLLIN | EPOLLRDHUP | EPOLLERR;
+        ret = event_poll(current_thread_epoll(), sockfd, events);
+        if (ret != 0) return -1;
+        ret = hook_recv_pfn(sockfd, buf, len, flags);
+        if(ret == 0 && (ifd->error & IERDHUP)) return -1;
+    }
     return ret;
 }
 
@@ -294,32 +296,32 @@ ssize_t recvfrom(int sockfd, void *buf, size_t len, int flags, struct sockaddr *
     DBG_LOG("recvfrom hooked");
     inner_fd *ifd = get_inner_fd(sockfd);
     if(!ifd || !(O_NONBLOCK & ifd->flags)) return hook_recvfrom_pfn(sockfd, buf, len, flags, src_addr, addrlen);
-	
-	int ret = hook_recvfrom_pfn(sockfd, buf, len, flags, src_addr, addrlen);
+    
+    int ret = hook_recvfrom_pfn(sockfd, buf, len, flags, src_addr, addrlen);
     if(ret == -1 && (errno == EAGAIN || errno == EWOULDBLOCK)) {
-    	int events = EPOLLIN | EPOLLRDHUP | EPOLLERR;
-    	ret = event_poll(current_thread_epoll(), sockfd, events);
-    	if (ret != 0) return -1;
-    	ret = hook_recvfrom_pfn(sockfd, buf, len, flags, src_addr, addrlen);
-    	if(ret == 0 && (ifd->error & IERDHUP)) return -1;
-	}
+        int events = EPOLLIN | EPOLLRDHUP | EPOLLERR;
+        ret = event_poll(current_thread_epoll(), sockfd, events);
+        if (ret != 0) return -1;
+        ret = hook_recvfrom_pfn(sockfd, buf, len, flags, src_addr, addrlen);
+        if(ret == 0 && (ifd->error & IERDHUP)) return -1;
+    }
     return ret;
 }
 
 ssize_t recvmsg(int sockfd, struct msghdr *msg, int flags) {
     HOOK_SYS_CALL(recvmsg);
     if(!co_hooked()) return hook_recvmsg_pfn(sockfd, msg, flags);
+    DBG_LOG("hook recvmsg");
     inner_fd *ifd = get_inner_fd(sockfd);
     if(!ifd || !(O_NONBLOCK & ifd->flags)) return hook_recvmsg_pfn(sockfd, msg, flags);
-	DBG_LOG("hook recvmsg");
-	int ret = hook_recvmsg_pfn(sockfd, msg, flags);
+    int ret = hook_recvmsg_pfn(sockfd, msg, flags);
     if(ret == -1 && (errno == EAGAIN || errno == EWOULDBLOCK)) {
-    	int events = EPOLLIN | EPOLLRDHUP | EPOLLERR;
-    	ret = event_poll(current_thread_epoll(), sockfd, events);
-    	if (ret != 0) return -1;
-    	ret = hook_recvmsg_pfn(sockfd, msg, flags);
-    	if(ret == 0 && (ifd->error & IERDHUP)) return -1;
-	}
+        int events = EPOLLIN | EPOLLRDHUP | EPOLLERR;
+        ret = event_poll(current_thread_epoll(), sockfd, events);
+        if (ret != 0) return -1;
+        ret = hook_recvmsg_pfn(sockfd, msg, flags);
+        if(ret == 0 && (ifd->error & IERDHUP)) return -1;
+    }
     return ret;
 }
 
@@ -442,7 +444,7 @@ unsigned int sleep(unsigned int seconds) {
     HOOK_SYS_CALL(sleep);
     if(!co_hooked()) return hook_sleep_pfn(seconds);
     DBG_LOG("sleep hook");
-    return co_sleep(seconds);    
+    return co_sleep(seconds * 1000);    
 }
 
 struct hostent *gethostbyname(const char *name) {

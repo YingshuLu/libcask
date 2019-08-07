@@ -16,6 +16,8 @@ change codes or re-build libraries.
 * Coroutine-level sync primitives among multiple-threads: mutex, spinlock, barrier, condition variant, Semaphore
 * Async task for unhookable blocked syscalls
 
+<img src="https://raw.githubusercontent.com/YingshuLu/libcask/master/libcask.svg?sanitize=true">
+
 ### How to build
 
 Platform:

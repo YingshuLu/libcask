@@ -4,8 +4,8 @@
 #include <stdlib.h>
 
 struct __co_bit_map {
-	char* map;
-	size_t size;
+    char* map;
+    size_t size;
 };
 
 typedef struct __co_bit_map bit_map_t;

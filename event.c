@@ -98,8 +98,8 @@ int add_events(epoll_t *ep, int fd, int events) {
     //DBG_LOG("fd [%d], add events\n", fd);
     int ret = cntl_events(ep, EPOLL_CTL_ADD, fd, events);
     if(ret < 0 && errno == EEXIST) {
-        INF_LOG("[Warn] fd: was added in epoll list", fd);
-        ret = 0;
+        INF_LOG("[Warn] fd %d: was added in epoll list", fd);
+        ret = cntl_events(ep, EPOLL_CTL_MOD, fd, events);
     }
     return ret;
 }
@@ -204,11 +204,10 @@ int event_wait(epoll_t *ep) {
         default: {
             for(i = 0; i < num; i++) {
                 ifd = get_inner_fd(ep->events[i].data.fd);
-                ifd->error |= events_to_error(ep->events[i].events);
+                ifd->error = events_to_error(ep->events[i].events);
                 delete_events(ep, ifd->fd, 0);
-
                 if(ifd && ifd->task) co_resume(ifd->task);
-                DBG_LOG("event loop wakeup task: %lu", ifd->task->cid);
+                DBG_LOG("event loop wakeup task: %lu, due to fd %d, events: %d", ifd->task->cid, ifd->fd, ifd->error);
             }
         }
     }

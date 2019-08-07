@@ -5,7 +5,8 @@
 #include "list.h"
 #include "time_wheel.h"
 
-#define MIN_TIME_WHEEL_SIZE 6000
+// 60s 
+#define MIN_TIME_WHEEL_SIZE 60
 #define MIN_TIME_WHEEL_INTERVAL 1
 
 time_wheel_t* new_time_wheel(size_t size, time_t interval) {
@@ -14,9 +15,9 @@ time_wheel_t* new_time_wheel(size_t size, time_t interval) {
 
     tw->fd = timerfd_create(CLOCK_MONOTONIC, TFD_NONBLOCK|TFD_CLOEXEC);
     struct itimerspec ltv;
-    ltv.it_value.tv_sec = tw->interval;
-    ltv.it_value.tv_nsec = 0;
-    ltv.it_interval.tv_sec = tw->interval;
+    ltv.it_value.tv_sec = 1;
+    ltv.it_value.tv_nsec = 0; // start after 1 s
+    ltv.it_interval.tv_sec = 1;
     ltv.it_interval.tv_nsec = 0;
     timerfd_settime(tw->fd, 0, &ltv, NULL);
 
