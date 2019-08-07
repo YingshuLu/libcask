@@ -21,7 +21,7 @@ change codes or re-build libraries.
 ### How to build
 
 Platform:
-* Linux only (*ubuntu 16.04 TLS and redhat 7.1 or above recommended*) 
+* Linux only (*ubuntu 16.04 TLS and redhat 7.1 or above recommended*)
 * gcc version >= 6.2.0   
 
 Build library:  
@@ -34,6 +34,10 @@ then libcask.so would be present in libcask/output
 Build tests:  
 $ cd libcask/test    
 $ bash build_test.sh server [debug]
+
+To do list:
+* co_rwlock
+* hook getaddrinfo
 
 ### Appendix
 [libco](https://github.com/Tencent/libco) & [libgo](https://github.com/yyzybb537/libgo) & [libtask](https://swtch.com/libtask/) inspired this C style coroutine library.
