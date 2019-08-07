@@ -21,8 +21,7 @@ change codes or re-build libraries.
 ### How to build
 
 Platform:
-* Linux only (*ubuntu 16.04 TLS recommended*)  
-* kernel >= 4.8.0.59  
+* Linux only (*ubuntu 16.04 TLS and redhat 7.1 or above recommended*) 
 * gcc version >= 6.2.0   
 
 Build library:  
