@@ -25,19 +25,25 @@ Platform:
 * gcc version >= 6.2.0   
 
 Build library:  
+```
 $ cd libcask  
 $ mkdir output  
-$ bash build.sh  
+$ bash build.sh
+```  
 
 then libcask.so would be present in libcask/output
 
 Build tests:  
+```
 $ cd libcask/test    
 $ bash build_test.sh server [debug]
+```
 
 To do list:
-* co_rwlock
-* hook getaddrinfo
+- []  co_rwlock
+- []  multiple-thread scheduling with work-steal (not consider to implement)
+- [x] hook getaddrinfo
+- [x] hook __poll poll select
 
 ### Appendix
 [libco](https://github.com/Tencent/libco) & [libgo](https://github.com/yyzybb537/libgo) & [libtask](https://swtch.com/libtask/) inspired this C style coroutine library.
