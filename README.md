@@ -39,7 +39,7 @@ $ cd libcask/test
 $ bash build_test.sh server [debug]
 ```
 
-To do list:
+### To do list
 - []  co_rwlock
 - []  multiple-thread scheduling with work-steal (not consider to implement)
 - [x] hook getaddrinfo
