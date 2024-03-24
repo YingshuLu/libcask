@@ -73,18 +73,16 @@ task_t *RR_picknext(run_queue_t *rq) {
     }
     */
 
-    list_t *ls = rq->run_list.next;
-
+    list_t *ls = rq->run_list.prev;
     do {
         //no runable tasks, block thread on epoll_wait for CPU saving
         if(!event_wait(current_sched()->epoll) && list_empty(ls)) { 
             delay_event(1000 * 60);
         }
         else delay_event(0);
-        ls = rq->run_list.next;
+        ls = rq->run_list.prev;
     } while(list_empty(ls));
 
-    ls = rq->run_list.next;
     task_t *t = list_to_task(ls);
     DBG_LOG("pick up task: %lu", t->cid);
     return t;
