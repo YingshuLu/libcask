@@ -51,7 +51,7 @@ void RR_enqueue(run_queue_t *rq, task_t * t) {
     list_delete(&t->run_link);
 
     spin_lock(&rq->lock);
-    list_add_before(&rq->run_list, &t->run_link);
+    list_add_after(&rq->run_list, &t->run_link);
     rq->task_num++;
     spin_unlock(&rq->lock);
 

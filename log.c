@@ -33,19 +33,7 @@ const char *get_time_str() {
 }
 
 int log_printf(int fd, int level, const char *fmt, ...) {
-    char *buf = NULL;
-    if (co_self()) {
-        #define CO_LOG_KEY "co_log_key"
-        buf = (char *)co_spec_get(CO_LOG_KEY);
-        if(!buf) {
-            co_spec_set(CO_LOG_KEY, _log_buf, LOG_BUFFER_SIZE);
-            buf = (char *)co_spec_get(CO_LOG_KEY);
-        }
-    }
-    else {
-        buf = _log_buf;
-    }
-
+    char *buf = _log_buf;
 	char new_fmt[1024] = {0};
     int len = snprintf(new_fmt, 1024, _log_fmt, _log_levels[level], get_time_str(), getpid(), tid(), getcid(), fmt);
 
