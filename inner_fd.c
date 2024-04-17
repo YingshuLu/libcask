@@ -8,8 +8,8 @@
 #define INVALID_FD -1
 #define MAX_FD_NUM 102400
 
-//5 seconds
-#define FD_TIMEOUT 3
+//60 seconds
+#define FD_TIMEOUT 60
 
 static inner_fd* g_inner_fd_list[MAX_FD_NUM] = {0};
 
