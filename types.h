@@ -8,7 +8,7 @@
 #include <libgen.h>
 #include "log.h"
 
-#define MAX_ERROR_BUFFER_SIZE 1024
+#define MAX_ERROR_BUFFER_SIZE 512
 
 #define GLOBAL
 #define LIKELY(con) (__builtin_expect(!!(con), 1))
@@ -25,7 +25,7 @@
 #define ERR_LOG(fmt, ...) LOG_OUTPUT(LOG_FD_STDERR, LOG_ERROR, fmt, ##__VA_ARGS__)
 
 #define dperror(ret) do {\
-    char _error_buffer[512] = {0};\
+    char _error_buffer[MAX_ERROR_BUFFER_SIZE] = {0};\
     strerror_r(errno, _error_buffer, MAX_ERROR_BUFFER_SIZE);\
     ERR_LOG("return value: %d, errno: %d, %s", ret, errno, _error_buffer);\
 }while(0)
